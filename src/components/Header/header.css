@@ -1,0 +1,8 @@
+header {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  color:rgb(80, 79, 79);
+  border: 1px solid silver;
+  background: linear-gradient(0deg, rgba(124,124,128,1) 0%, rgba(235,252,255,1) 100%);
+ }
