@@ -1,9 +1,11 @@
+import classNames from "classname";
+import { isEmpty } from "lodash";
 
 import Input from "../Input";
 import UserCard from "../UserCard/UserCard";
 
 import { v4 as getUniqueId } from 'uuid';
-import { useContext,useState } from "react";
+import { useContext, useState, useEffect} from "react";
 import { UsersContext } from "../../App";
 
 import styles from "./registrationForm.module.css";
@@ -13,69 +15,86 @@ const DEFAULT_USERS = [
     name: 'John',
     surname: 'Nollan',
     email: 'john@gmail.com',
-    id: getUniqueId(),
+    id: getUniqueId()
   },
   {
-    name: 'Harry',
-    surname: 'Potter',
-    email: 'harry@mail.com',
-    id: getUniqueId(),
+    name: 'Nick',
+    surname: 'Rozberg',
+    email: 'nick',
+    id: getUniqueId()
   },
   {
-    name: 'Pedro',
-    surname: 'Lopes',
-    email: 'pedro@gmail.com',
-    id: getUniqueId(),
+    name: 'Anna',
+    surname: 'Lee',
+    email: 'anna@gmail.com',
+    id: getUniqueId()
   },
   {
-    name: 'Taras',
+    name: 'Rafael',
     surname: 'Rafff',
     email: 'rafael@gmail.com',
-    id: getUniqueId(),
+    id: getUniqueId()
   },
 ];
 
 const RegistrationForm = () => {
+  const contextData = useContext(UsersContext);
+
   const [users, setUsers] = useState(DEFAULT_USERS);
-
-  const [isEditMode, setIsEditMode] = useState(false); 
-  const [selectedUserId, setSelectedUserId] = useState(); 
-
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
+  const [err, setErr] = useState(false); 
+  const [isEditMode, setIsEditMode] = useState(false); 
+
+  useEffect(() => {
+    contextData.setUsersCount(users.length);
+  }, [users, contextData.setUsersCount]);
 
   const onAddUser = () => {
-    if (isEditMode) {
-      setUsers((prevUsers) =>
-        prevUsers.reduce((updatedUsers, user) => {
-          if (user.id === selectedUserId) {
-            updatedUsers.push({ ...user, name, surname, email });
-          } else {
-            updatedUsers.push(user);
-          }
-          return updatedUsers;
-        }, [])
-      );
-    
-      setIsEditMode(false);
-      setSelectedUserId(null);
-    }
-    else {
-      const user = {
-        name,
-        surname,
-        email,
-        id: getUniqueId(),
-      };
+    const user = {
+      name,
+      surname,
+      email,
+      id: getUniqueId(),
+    };
 
-      setUsers([...users, user]);
+    setUsers((prevUsers) => [...prevUsers, user]);
+
+    if (isEmpty(name) || isEmpty(surname) || isEmpty(email)) {
+      setErr(true);
     }
 
-    setName('');
-    setSurname('');
-    setEmail('');
-  };
+      setUsers((prevUsers) => {
+        const updatedUsers = [...prevUsers, user];
+        contextData.setUsersCount(updatedUsers.length);
+  
+        const fullName = `${name} ${surname}`;
+        contextData.setLongestName((prevLongestName) =>
+          fullName.trim().length > prevLongestName.trim().length ? fullName.trim() : prevLongestName.trim()
+        );
+  
+        return updatedUsers;
+      });
+  
+      if (isEmpty(name) || isEmpty(surname) || isEmpty(email)) {
+        setErr(true);
+      } else {
+        setErr(false);
+      }
+
+      setName('');
+      setSurname('');
+      setEmail('');
+    };
+
+  const leftSideClassName = classNames(
+    styles['left-side'],
+     {
+      [styles['border-red']]: err,
+    },
+  );
+
 
   const onGetName = (value) => {
     setName(value);
@@ -91,23 +110,21 @@ const RegistrationForm = () => {
 
   const onDeleteUserHandler = (id) => {
     const filteredUsers = users.filter((user) => user.id !== id);
-    setUsers(filteredUsers);
+      setUsers(filteredUsers)  
   };
 
   const onUpdateUserHandler = (id) => {
-    const currentUser = users.find((user) => user.id === id);
-
+    const currentUser = users.filter((user) => user.id === id)[0];
+  
     setName(currentUser.name);
     setSurname(currentUser.surname);
     setEmail(currentUser.email);
-
-    setIsEditMode(true); 
-    setSelectedUserId(id);
   };
+
 
   return (
     <div className={styles['common']}>
-      <div className={styles['left-side']}>
+      <div className={leftSideClassName}>
         <Input
           label="Name: "
           placeholder="Enter Your Name"
@@ -126,23 +143,17 @@ const RegistrationForm = () => {
           onChangeFunction={onGetEmail}
           value={email}
         />
-        {isEditMode ? (
-          <button
-            type="button"
-            onClick={onAddUser}
-            className={styles['add-user-button']}
-          >
-            Save User
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onAddUser}
-            className={styles['add-user-button']}
-          >
-            Add User
-          </button>
-        )}
+        {
+          isEditMode ? (
+            <button type="button" onClick={onAddUser} className={styles['add-user-button']}>
+              Update User
+            </button>
+          ) : (
+            <button type="button" onClick={onAddUser} className={styles['add-user-button']}>
+               Add User
+            </button>
+          )
+        }
       </div>
       <div className={styles['right-side']}>
         <div className={styles['users-list']}>
@@ -165,6 +176,7 @@ const RegistrationForm = () => {
     </div>
   );
 };
+
 
 
 export default RegistrationForm;
